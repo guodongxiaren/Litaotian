@@ -1,0 +1,36 @@
+<LinearLayout xmlns:a="http://schemas.android.com/apk/res/android"
+    a:layout_width="fill_parent"
+    a:layout_height="fill_parent"
+    a:orientation="vertical" >
+    <TextView
+        a:id="@+id/chatbox"
+        a:layout_width="match_parent"
+        a:layout_height="0dip"
+        a:layout_weight="1"
+        />
+    <LinearLayout 
+        a:layout_width="match_parent"
+        a:layout_height="wrap_content"
+        a:orientation="horizontal"
+        a:padding="5dp"
+        a:background="#EE000000">
+        <EditText 
+            a:id="@+id/chattxt"
+            a:layout_height="wrap_content"
+            a:textSize="30sp"
+            a:layout_width="0dip"
+            a:layout_weight="4"
+            a:layout_marginRight="3dp"
+            a:layout_gravity="center_vertical"
+            a:background="@drawable/shap_edit"/>
+        <Button 
+            a:id="@+id/chatok"
+            a:layout_width="0dip"
+            a:layout_height="36dp"
+            a:layout_gravity="center_vertical"
+            a:layout_weight="1"
+            a:text="@string/send"
+            a:background="@drawable/shape_btn"/>
+    </LinearLayout>
+
+</LinearLayout>
