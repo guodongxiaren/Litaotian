@@ -2,12 +2,16 @@
     a:layout_width="fill_parent"
     a:layout_height="fill_parent"
     a:orientation="vertical" >
-    <TextView
-        a:id="@+id/chatbox"
+     <ListView
+        a:id="@+id/listView"
         a:layout_width="match_parent"
-        a:layout_height="0dip"
+        a:layout_height="0dp"
         a:layout_weight="1"
+        a:stackFromBottom="true"
+        a:transcriptMode="alwaysScroll"
+        a:divider="@null"
         />
+   
     <LinearLayout 
         a:layout_width="match_parent"
         a:layout_height="wrap_content"

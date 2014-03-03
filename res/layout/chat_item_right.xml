@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="10dp">  
+    <TextView 
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/message"
+        android:layout_toLeftOf="@+id/head"
+        android:background="@drawable/chat_right"
+        style="@style/chat_content"/>
+
+      <ImageView
+          android:id="@+id/head"
+          android:layout_width="52dp"
+          android:layout_height="52dp"
+          android:background="@drawable/gg"
+          android:layout_alignParentRight="true"
+           />
+
+     <TextView
+         android:id="@+id/username"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:layout_alignParentRight="true"
+         android:layout_below="@+id/head"
+         android:layout_toRightOf="@id/message"
+         android:text="@string/diaosi" 
+         android:gravity="center"/>
+</RelativeLayout>

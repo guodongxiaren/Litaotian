@@ -7,25 +7,34 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.LinkedList;
+import java.util.List;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 
 public class Main extends Activity {
 
 	private EditText chatext;
-	private TextView chatbox;
 	private Button chatok;
 
-	private static final String IP = "192.168.56.1";
+	private static final String IP = "192.168.56.1";//56.1
 	private static final int PORT = 5432;
+	
 	private Thread mThread = null;
 
 	private Socket socket = null;
@@ -33,22 +42,27 @@ public class Main extends Activity {
 	private OutputStream out;
 	private DataOutputStream dout;
 	private DataInputStream din;
-
+	private listViewAdapter adapter = new listViewAdapter();
+	List<String> chatList;
+	ListView listView;
+	LayoutInflater inflater;
+	LinearLayout loadingLayout;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
 
-		// handler = new MyHandler();
+		inflater = (LayoutInflater)this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+	
+		chatList = new LinkedList<String>();
 		chatext = (EditText) findViewById(R.id.chattxt);
-		chatbox = (TextView) findViewById(R.id.chatbox);
+		listView = (ListView) findViewById(R.id.listView);
 		chatok = (Button) findViewById(R.id.chatok);
-		
-		chatbox.setCursorVisible(false);
-		chatbox.setFocusable(false);
-		chatbox.setFocusableInTouchMode(false);
-		chatbox.setGravity(2);// ??
 
+		loadingLayout = new LinearLayout(this);
+		listView.addFooterView(loadingLayout);
+		listView.setAdapter(adapter);
 		chatok.setOnClickListener(new BtnOnClickListener());
 
 		mThread = new Thread(new SocketThread());
@@ -62,14 +76,14 @@ public class Main extends Activity {
  * 每次发送消息后，清空编辑框。不能再按钮事件中清空。否则发送的消息都变成空
  */
 	@SuppressLint("HandlerLeak")
-	Handler textHandler = new Handler(){
+	Handler clearHandler = new Handler(){
 
 		@Override
 		public void handleMessage(Message msg) {
 			// TODO Auto-generated method stub
 			super.handleMessage(msg);
 			Bundle b = msg.getData();
-			boolean flag = b.getBoolean("chatext");
+			boolean flag = b.getBoolean("text");
 			if(flag)
 				chatext.setText("");
 		}
@@ -80,12 +94,29 @@ public class Main extends Activity {
 	Handler mainHandler = new Handler(){
 
 		@Override
-		public void handleMessage(Message msg) {
+		public void handleMessage(Message m) {
 			// TODO Auto-generated method stub
-			super.handleMessage(msg);
-			Bundle b = msg.getData();
-			String text = b.getString("text")+"\n";
-			chatbox.append(text);
+			super.handleMessage(m);
+			Bundle b = m.getData();
+			String msg = b.getString("info")+"\n";
+			Log.i("hand----", msg);
+			if(msg.startsWith("-")){
+				Log.i("send----", msg);
+				msg = msg.substring(1);
+				View sendView = inflater.inflate(R.layout.chat_item_right, null);
+				TextView listText = (TextView)sendView.findViewById(R.id.message);
+				listText.setText(msg);
+				listView.addFooterView(sendView);
+			}
+			else if(msg.startsWith("+")){
+				Log.i("rece----", msg);
+				msg = msg.substring(1);
+				View receView = inflater.inflate(R.layout.chat_item_left, null);
+				TextView listText = (TextView)receView.findViewById(R.id.message);
+				listText.setText(msg);
+				listView.addFooterView(receView);
+			}
+			adapter.notifyDataSetChanged();
 		}
 		
 	};
@@ -94,7 +125,7 @@ public class Main extends Activity {
  * @author Acer
  *
  */
-	class SocketThread implements Runnable {
+	private class SocketThread implements Runnable {
 
 		@Override
 		public void run() {
@@ -116,7 +147,7 @@ public class Main extends Activity {
  * @author Acer
  *
  */
-	class SendThread implements Runnable {
+	private class SendThread implements Runnable {
 
 		@Override
 		public void run() {
@@ -132,10 +163,15 @@ public class Main extends Activity {
 			try {
 				dout.writeUTF(msg);
 				Bundle b = new Bundle();
-				b.putBoolean("chatext",true);
+				b.putBoolean("text",true);
 				Message m = new Message();
+				Message m2 = new Message();
 				m.setData(b);
-				textHandler.sendMessage(m);
+				clearHandler.sendMessage(m);
+				Bundle b2 = new Bundle();
+				b2.putString("info", "-"+msg);
+				m2.setData(b2);
+				mainHandler.sendMessage(m2);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -148,7 +184,7 @@ public class Main extends Activity {
  * @author Acer
  *
  */
-	class PrintThread implements Runnable {
+	private class PrintThread implements Runnable {
 
 		@Override
 		public void run() {
@@ -164,12 +200,12 @@ public class Main extends Activity {
 			while (true) {
 			
 				try {
-					String line = din.readUTF();
+					String msg = din.readUTF();
 					Bundle b = new Bundle();
-					b.putString("text", line);
-					Message msg = new Message();
-					msg.setData(b);
-					mainHandler.sendMessage(msg);
+					b.putString("info", "+"+msg);
+					Message m = new Message();
+					m.setData(b);
+					mainHandler.sendMessage(m);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -180,7 +216,7 @@ public class Main extends Activity {
 
 	}
 
-	class BtnOnClickListener implements View.OnClickListener {
+	private class BtnOnClickListener implements View.OnClickListener {
 
 		@Override
 		public void onClick(View v) {
@@ -189,6 +225,35 @@ public class Main extends Activity {
 			new Thread(st).start();
 			
 		}
-
 	}
+	private class listViewAdapter extends BaseAdapter{
+
+		
+		@Override
+		public int getCount() {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+		@Override
+		public Object getItem(int position) {
+			// TODO Auto-generated method stub
+			return position;
+		}
+
+		@Override
+		public long getItemId(int position) {
+			// TODO Auto-generated method stub
+			return position;
+		}
+
+		@Override
+		public View getView(int position, View convertView, ViewGroup parent) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		
+	}
+
 }
