@@ -14,4 +14,6 @@
     <string name="ok">确定</string>
     <string name="nvshen">女神</string>
     <string name="diaosi">屌丝</string>
+    <string name="title_activity_main">MainActivity</string>
+
 </resources>

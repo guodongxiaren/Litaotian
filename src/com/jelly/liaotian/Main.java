@@ -34,6 +34,7 @@ public class Main extends Activity {
 
 	private static final String IP = "192.168.56.1";//56.1
 	private static final int PORT = 5432;
+	protected static final String TAG = "tag";
 	
 	private Thread mThread = null;
 
@@ -70,6 +71,8 @@ public class Main extends Activity {
 		
 		PrintThread pt = new PrintThread();
 		new Thread(pt).start();
+		SendThread st = new SendThread();
+		new Thread(st).start();
 	}
 
 /**
@@ -107,6 +110,7 @@ public class Main extends Activity {
 				TextView listText = (TextView)sendView.findViewById(R.id.message);
 				listText.setText(msg);
 				listView.addFooterView(sendView);
+				Log.i(TAG+"0", ""+listView);
 			}
 			else if(msg.startsWith("+")){
 				Log.i("rece----", msg);
@@ -114,9 +118,12 @@ public class Main extends Activity {
 				View receView = inflater.inflate(R.layout.chat_item_left, null);
 				TextView listText = (TextView)receView.findViewById(R.id.message);
 				listText.setText(msg);
+				listView.setAdapter(adapter);
 				listView.addFooterView(receView);
+				Log.i(TAG+"1", ""+listView);
 			}
 			adapter.notifyDataSetChanged();
+			Log.i(TAG, ""+adapter);
 		}
 		
 	};
@@ -129,14 +136,11 @@ public class Main extends Activity {
 
 		@Override
 		public void run() {
-			// TODO Auto-generated method stub
 			try {
 				socket = new Socket(IP, PORT);
 			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -151,14 +155,55 @@ public class Main extends Activity {
 
 		@Override
 		public void run() {
-			// TODO Auto-generated method stub
 			try {
 				out = socket.getOutputStream();
 				dout = new DataOutputStream(out);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+
+		}
+
+	}
+/**
+ * 接收并显示的线程
+ * @author Acer
+ *
+ */
+	private class PrintThread implements Runnable {
+
+		@Override
+		public void run() {
+			try {
+				in = socket.getInputStream();
+				din = new DataInputStream(in);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+	
+			while (true) {
+			
+				try {
+					String msg = din.readUTF();
+					Bundle b = new Bundle();
+					b.putString("info", "+"+msg);
+					Message m = new Message();
+					m.setData(b);
+					mainHandler.sendMessage(m);
+				} catch (IOException e) {
+					e.printStackTrace();
+					break;
+				}
+				
+			}
+		}
+
+	}
+
+	private class BtnOnClickListener implements View.OnClickListener {
+
+		@Override
+		public void onClick(View v) {
 			String msg = chatext.getText().toString();
 			try {
 				dout.writeUTF(msg);
@@ -173,56 +218,8 @@ public class Main extends Activity {
 				m2.setData(b2);
 				mainHandler.sendMessage(m2);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}
-
-	}
-/**
- * 接收并显示的线程
- * @author Acer
- *
- */
-	private class PrintThread implements Runnable {
-
-		@Override
-		public void run() {
-			// TODO Auto-generated method stub
-			try {
-				in = socket.getInputStream();
-				din = new DataInputStream(in);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	
-			while (true) {
-			
-				try {
-					String msg = din.readUTF();
-					Bundle b = new Bundle();
-					b.putString("info", "+"+msg);
-					Message m = new Message();
-					m.setData(b);
-					mainHandler.sendMessage(m);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
-			}
-		}
-
-	}
-
-	private class BtnOnClickListener implements View.OnClickListener {
-
-		@Override
-		public void onClick(View v) {
-			// TODO Auto-generated method stub
-			SendThread st = new SendThread();
-			new Thread(st).start();
 			
 		}
 	}
