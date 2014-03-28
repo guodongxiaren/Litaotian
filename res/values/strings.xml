@@ -15,5 +15,9 @@
     <string name="nvshen">女神</string>
     <string name="diaosi">屌丝</string>
     <string name="title_activity_main">MainActivity</string>
-
+    <string name="other_devices">新设备</string>
+	<string name="paired_devices">已配对</string>
+	<string name="select_device">选择要连接的设备</string>
+	<string name="none_found">没有发现设备</string>
+	<string name="none_paired">没有已配对设备</string>
 </resources>
