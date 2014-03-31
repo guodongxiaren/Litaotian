@@ -12,8 +12,11 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
 public class DevicesList extends Activity {
 	public static String EXTRA_DEVICE_ADDRESS = "device_address";
@@ -29,10 +32,10 @@ public class DevicesList extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.devices_list);
 
-		//得到本地蓝牙适配器
+		// 得到本地蓝牙适配器
 		mBtAdapter = BluetoothAdapter.getDefaultAdapter();
 		// 得到已配对的设备集合
-        Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
+		Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
 		mPairedDevicesArrayAdapter = new ArrayAdapter<String>(this,
 				R.layout.device_item);
 		mNewDevicesArrayAdapter = new ArrayAdapter<String>(this,
@@ -40,10 +43,11 @@ public class DevicesList extends Activity {
 		// 已配对设备的列表
 		ListView pairedList = (ListView) findViewById(R.id.list_devices);
 		pairedList.setAdapter(mPairedDevicesArrayAdapter);
+		pairedList.setOnItemClickListener(mDeviceClickListener);
 		// 未配对的新设备的列表
 		ListView newList = (ListView) findViewById(R.id.new_devices);
 		newList.setAdapter(mNewDevicesArrayAdapter);
-
+		newList.setOnItemClickListener(mDeviceClickListener);
 		// 注册广播 当设备被发现时
 		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
 		this.registerReceiver(mReceiver, filter);
@@ -51,19 +55,56 @@ public class DevicesList extends Activity {
 		// 注册广播 当发现过程完成以后
 		filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
 		this.registerReceiver(mReceiver, filter);
-		
-        // If there are paired devices, add each one to the ArrayAdapter
-        if (pairedDevices.size() > 0) {
-            findViewById(R.id.title_paired_devices).setVisibility(View.VISIBLE);
-            for (BluetoothDevice device : pairedDevices) {
-                mPairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
-            }
-        } else {
-            String noDevices = getResources().getText(R.string.none_paired).toString();
-            mPairedDevicesArrayAdapter.add(noDevices);
-        }
+
+		// 如果有已配对设备，把他们都添加到adapter中
+		if (pairedDevices.size() > 0) {
+			findViewById(R.id.title_paired_devices).setVisibility(View.VISIBLE);
+			for (BluetoothDevice device : pairedDevices) {
+				mPairedDevicesArrayAdapter.add(device.getName() + "\n"
+						+ device.getAddress());
+			}
+		} else {
+			String noDevices = getResources().getText(R.string.none_paired)
+					.toString();
+			mPairedDevicesArrayAdapter.add(noDevices);
+		}
 	}
 
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		// 确保我们不再去发现设备
+		if (mBtAdapter != null) {
+			mBtAdapter.cancelDiscovery();
+		}
+
+		// 解除广播接收器的注册
+		this.unregisterReceiver(mReceiver);
+	}
+
+	/*
+	 * ListView条目单击事件监听器
+	 */
+	private OnItemClickListener mDeviceClickListener = new OnItemClickListener() {
+		@Override
+		public void onItemClick(AdapterView<?> arg0, View v, int position,
+				long id) {
+			// 当我们想要连接某个设备时，停止发现
+			mBtAdapter.cancelDiscovery();
+
+			// 得到MAC地址，至少有17位
+			String info = ((TextView) v).getText().toString();
+			String address = info.substring(info.length() - 17);
+
+			// 创建一个Intent对象，包含Mac地址
+			Intent intent = new Intent();
+			intent.putExtra(EXTRA_DEVICE_ADDRESS, address);
+
+			// 设置activity的返回结果，并关闭Activity
+			setResult(Activity.RESULT_OK, intent);
+			finish();
+		}
+	};
 	/*
 	 * 内部类 广播事件接收器，监听发现的设备
 	 */
